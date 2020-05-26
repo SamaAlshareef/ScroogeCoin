@@ -1,16 +1,28 @@
 
 public class Transaction {
 	
-	String id;
+	int id;
 	String sender;
 	String receiver;
-	double amount;
+	String signature;
+	Coin coin;
+	boolean verified;
 	
-	public Transaction(String id, String sender, String receiver, double amount)
+	//Pay Coins Transaction
+	public Transaction( String sender, String receiver,Coin coin)
 	{
-		this.id = id;
+		this.id = Initialiser.transId ++;
 		this.sender = sender;
 		this.receiver = receiver;
-		this.amount = amount;
+		this.coin = coin;
+		this.verified = false;
+	}
+	
+	//Create Coins Transactions
+	public Transaction(String creator, Coin coin)
+	{
+		this.id = Initialiser.transId ++;
+		this.sender = creator;
+		this.coin = coin;
 	}
 }
