@@ -1,8 +1,6 @@
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -11,17 +9,16 @@ import java.security.Signature;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedList;
-
 import javax.crypto.Cipher;
 
 public class Initialiser {
 
-	public  LinkedList<Block> blockChain = new LinkedList<Block>(); 
+	public static  LinkedList<Block> blockChain = new LinkedList<Block>(); 
 	public static ArrayList<User> users = new ArrayList<User>();
 	public static int transId = 0;
 	public static int blockId = 0;
 	public static int coinId = 0;
-	public static ArrayList<Transaction> transactions = new ArrayList<Transaction>();
+	public static ArrayList<Transaction> buffer = new ArrayList<Transaction>();
 	
 	public Initialiser() throws Exception
 	{
@@ -76,15 +73,7 @@ public class Initialiser {
 	    return Base64.getEncoder().encodeToString(signature);
 	}
 	
-	public static boolean verify(String plainText, String signature, PublicKey publicKey) throws Exception {
-	    Signature publicSignature = Signature.getInstance("SHA256withRSA");
-	    publicSignature.initVerify(publicKey);
-	    publicSignature.update(plainText.getBytes(StandardCharsets.UTF_8));
-
-	    byte[] signatureBytes = Base64.getDecoder().decode(signature);
-
-	    return publicSignature.verify(signatureBytes);
-	}
+	
 	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ArrayList<Coin> createCoins() throws Exception
@@ -97,10 +86,11 @@ public class Initialiser {
 			coin.signature = sign;
 			tempCoinsList.add(coin);
 			Transaction trans = new Transaction(Scrooge.id, coin);
+			coin.addTransaction(trans);
 			String signTrans = Initialiser.sign(trans.toString(), Scrooge.privateKey);
 			trans.signature = signTrans;
-			transactions.add(trans);
-			checkTransactionsList();
+			buffer.add(trans);
+			checkScroogeTransactions();
 		}
 		return tempCoinsList;
 	}
@@ -113,51 +103,81 @@ public class Initialiser {
 			Transaction trans = new Transaction(sender, receiver.id, coinsList.get(i));
 			String sign = Initialiser.sign(trans.toString(), Scrooge.privateKey);
 			trans.signature = sign;
-			transactions.add(trans);
-			checkTransactionsList();
+			buffer.add(trans);
+			coinsList.get(i).addTransaction(trans);
+			checkScroogeTransactions();
 			receiver.coins.add(coinsList.get(i));
 		}
-		Initialiser.users.add(receiver);
-		
-		
+		Initialiser.users.add(receiver);	
 	}
 	
-	void checkTransactionsList() throws NoSuchAlgorithmException
+	public static void payCoins(ArrayList<Transaction> transactions)
 	{
-		if(transactions.size() == 10 && blockChain.size() == 0)
+		for(int i = 0; i < transactions.size(); i++)
+		{
+			String [] senderInfo = transactions.get(i).sender.split(" ");
+			String [] receiverInfo = transactions.get(i).receiver.split(" ");
+			int senderId = Integer.parseInt(senderInfo[1]);
+			int receiverId = Integer.parseInt(receiverInfo[1]);
+			users.get(senderId).coins.remove(transactions.get(i).coin);
+			users.get(receiverId).coins.add(transactions.get(i).coin);
+			System.out.println(senderId);
+			System.out.println(receiverId);
+			System.out.println(users.get(senderId).coins.get(users.get(senderId).coins.size()-1));
+			System.out.println(users.get(receiverId).coins.get(users.get(receiverId).coins.size()-1));
+		}
+	}
+	
+	public static void checkScroogeTransactions() throws NoSuchAlgorithmException
+	{
+		if(buffer.size() == 10 && blockChain.size() == 0)
 		{
 			createFirstBlock();
-			transactions.clear();
-			
+			buffer.clear();
 		}
-		else if(transactions.size() == 10 )
+		else if(buffer.size() == 10 )
 		{
-			createBlock();
-			transactions.clear();
-		}
-			
+			createScroogeBlock();
+			buffer.clear();
+		}	
 	}
 	
-	void createFirstBlock() throws NoSuchAlgorithmException
+	public static void createFirstBlock() throws NoSuchAlgorithmException
 	{
-		ArrayList<Transaction> blockTrans = (ArrayList<Transaction>) transactions.clone();;
+		ArrayList<Transaction> blockTrans = (ArrayList<Transaction>) buffer.clone();;
 		Block block = new Block(blockTrans, null);
 		blockChain.add(block);
 	}
 	
-	void createBlock() throws NoSuchAlgorithmException
+	public static void createScroogeBlock() throws NoSuchAlgorithmException
 	{
-		ArrayList<Transaction> blockTrans = (ArrayList<Transaction>) transactions.clone();
+		ArrayList<Transaction> blockTrans = (ArrayList<Transaction>) buffer.clone();
 		Block block = new Block(blockTrans, blockChain.get(blockChain.size()-1).hashOfBlock);
 		blockChain.add(block);
 	}
 	
+	public static void checkUsersTransactions() throws NoSuchAlgorithmException
+	{
+		if(buffer.size() == 10 )
+		{
+			createUsersBlock();
+			buffer.clear();
+		}	
+	}
 	
+	public static void createUsersBlock() throws NoSuchAlgorithmException
+	{
+		ArrayList<Transaction> blockTrans = (ArrayList<Transaction>) buffer.clone();
+		Block block = new Block(blockTrans, blockChain.get(blockChain.size()-1).hashOfBlock);
+		payCoins(blockTrans);
+		blockChain.add(block);
+	}
 	public static void main(String[] args) throws Exception
 	{
 		//Initialise Scrooge
 		Scrooge scrooge = new Scrooge();
 		Initialiser initialiser = new Initialiser();
-		System.out.println(initialiser.blockChain.size());
+		users.get(0).sendCoin(5, "User 2");
+		//System.out.println(Scrooge.verify(blockChain.get(0).transactions.get(0).toString(), blockChain.get(0).transactions.get(0).signature, scrooge.publicKey));
 	}
 }
