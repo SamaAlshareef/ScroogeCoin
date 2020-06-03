@@ -36,17 +36,20 @@ public class Scrooge {
 			String [] userInfo = trans.sender.split(" ");
 			int id = Integer.parseInt(userInfo[1]);
 			User currUser =  Initialiser.users.get(id);
-			System.out.println("verifying transaction: "+verifyTransaction(trans.toString(), trans.signature, currUser.publicKey));
-			System.out.println("ownership: "+(currUser.coins.get(currUser.coins.size()-1-pos).id == trans.coin.id));
-			System.out.println("Sender coin: "+currUser.coins.get(currUser.coins.size()-1).id);
-			System.out.println("coin id: "+trans.coin.id);
-			System.out.println("Double Spending: "+doubleSpending(trans));
+			//System.out.println("verifying transaction: "+verifyTransaction(trans.toString(), trans.signature, currUser.publicKey));
+			//System.out.println("ownership: "+(currUser.coins.get(currUser.coins.size()-1-pos).id == trans.coin.id));
+			//System.out.println("Double Spending: "+doubleSpending(trans));
+			//System.out.println(trans.signature);
 			if(verifyTransaction(trans.toString(), trans.signature, currUser.publicKey)
-					&& (currUser.coins.get(currUser.coins.size()-1-pos).id == trans.coin.id)
-					&& doubleSpending(trans))
+					&& (currUser.coins.get(currUser.coins.size()-1-pos).id == trans.coin.id))
 			{
-				Initialiser.buffer.add(trans);
-				Initialiser.checkUsersTransactions();
+				if(doubleSpending(trans))
+				{
+					Initialiser.buffer.add(trans);
+					Initialiser.checkUsersTransactions();
+				}
+				else
+					System.out.println("double spending detected");
 			}
 	}
 	

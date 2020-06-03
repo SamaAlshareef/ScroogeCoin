@@ -9,7 +9,12 @@ import java.security.Signature;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import javax.crypto.Cipher;
+import javax.swing.JButton;
+import javax.swing.JFrame;
 
 public class Initialiser {
 
@@ -19,11 +24,11 @@ public class Initialiser {
 	public static int blockId = 0;
 	public static int coinId = 0;
 	public static ArrayList<Transaction> buffer = new ArrayList<Transaction>();
+	public static Timer timer = new Timer(); 
 	
 	public Initialiser() throws Exception
 	{
 		userInitialiser();
-		
 	}
 		
 	public void userInitialiser() throws Exception
@@ -111,7 +116,7 @@ public class Initialiser {
 		Initialiser.users.add(receiver);	
 	}
 	
-	public static void payCoins(ArrayList<Transaction> transactions)
+	public static void payCoins(ArrayList<Transaction> transactions) throws Exception
 	{
 		for(int i = 0; i < transactions.size(); i++)
 		{
@@ -119,12 +124,19 @@ public class Initialiser {
 			String [] receiverInfo = transactions.get(i).receiver.split(" ");
 			int senderId = Integer.parseInt(senderInfo[1]);
 			int receiverId = Integer.parseInt(receiverInfo[1]);
+			System.out.println("Number of Coins before receiving: "+ users.get(receiverId).coins.size());
 			users.get(senderId).coins.remove(transactions.get(i).coin);
 			users.get(receiverId).coins.add(transactions.get(i).coin);
-			System.out.println(senderId);
-			System.out.println(receiverId);
-			System.out.println(users.get(senderId).coins.get(users.get(senderId).coins.size()-1));
-			System.out.println(users.get(receiverId).coins.get(users.get(receiverId).coins.size()-1));
+			String signature = sign(transactions.get(i).coin.toString(),users.get(receiverId).privateKey);
+			transactions.get(i).coin.signature = signature;
+			System.out.println("Sender: "+senderId);
+			System.out.println("Receiver: "+receiverId);
+			System.out.println("Coin id Transmitted: "+users.get(receiverId).coins.get(users.get(receiverId).coins.size()-1).id);
+			System.out.println("//////////////////////////////////////////////////////////////");
+			//			for(int j = 0; j < users.get(receiverId).coins.size(); j++)
+//			{
+//				System.out.println("Trans in Coins :" + j);
+//			}
 		}
 	}
 	
@@ -156,7 +168,7 @@ public class Initialiser {
 		blockChain.add(block);
 	}
 	
-	public static void checkUsersTransactions() throws NoSuchAlgorithmException
+	public static void checkUsersTransactions() throws Exception
 	{
 		if(buffer.size() == 10 )
 		{
@@ -165,19 +177,65 @@ public class Initialiser {
 		}	
 	}
 	
-	public static void createUsersBlock() throws NoSuchAlgorithmException
+	public static void createUsersBlock() throws Exception
 	{
 		ArrayList<Transaction> blockTrans = (ArrayList<Transaction>) buffer.clone();
 		Block block = new Block(blockTrans, blockChain.get(blockChain.size()-1).hashOfBlock);
 		payCoins(blockTrans);
 		blockChain.add(block);
 	}
+	
+	
+		static TimerTask task = new TimerTask() {
+			
+			@Override
+			public void run() {
+				int randomOne;
+				int randomTwo;
+				while(true)
+				{
+					randomOne = (int)(Math.random() * (99-0)) + 0;
+					randomTwo = (int)(Math.random() * (99-0)) + 0;
+					if(randomOne != randomTwo)
+						break;
+				}
+				User sender = users.get(randomOne);
+				User receiver = users.get(randomTwo);
+				
+				int amountOfCoins = (int)(Math.random() * (10-1)) + 1;
+				
+				
+				try {
+					sender.sendCoin(amountOfCoins, receiver.id);
+					System.out.println("Amount to be send: "+ amountOfCoins);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+		};
+		
+	
 	public static void main(String[] args) throws Exception
 	{
-		//Initialise Scrooge
+//		
+//		JFrame frame = new JFrame("My First GUI");
+//	       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//	       frame.setSize(300,300);
+//	       JButton button = new JButton("Press");
+//	       frame.getContentPane().add(button); // Adds Button to content pane of frame
+//	       frame.setVisible(true);
+//	       button.addActionListener(e -> System.exit(0));
 		Scrooge scrooge = new Scrooge();
 		Initialiser initialiser = new Initialiser();
-		users.get(0).sendCoin(5, "User 2");
-		//System.out.println(Scrooge.verify(blockChain.get(0).transactions.get(0).toString(), blockChain.get(0).transactions.get(0).signature, scrooge.publicKey));
+		
+		
+		
+		//users.get(0).sendCoin(10, "User 2");
+		//users.get(0).sendCoin(5, "User 3");
+		timer.scheduleAtFixedRate(task,10000, 10000);
+		
+		
 	}
 }

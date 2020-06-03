@@ -17,7 +17,7 @@ public class User {
 	
 	void sendCoin(int amount, String receiverId) throws Exception
 	{
-		if(amount <= this.coins.size()-1)
+		if(amount < this.coins.size())
 		{
 			for(int i = 0; i < amount; i++)
 			{
@@ -28,5 +28,7 @@ public class User {
 				Scrooge.verifyBlock(trans, i);
 			}
 		}
+		else
+			System.out.println("Transaction Failed insufficient amount of coins");
 	}
 }

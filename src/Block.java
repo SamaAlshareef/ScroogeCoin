@@ -10,6 +10,7 @@ public class Block {
 		ArrayList<Transaction> transactions = new ArrayList<Transaction>();
 		String hasfOfPrevBlock;
 		String hashOfBlock;
+		String signature;
 		
 		public Block(ArrayList<Transaction> transactions, String hasfOfPrevBlock) throws NoSuchAlgorithmException
 		{
