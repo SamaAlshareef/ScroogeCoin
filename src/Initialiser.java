@@ -25,6 +25,7 @@ public class Initialiser {
 	public static int coinId = 0;
 	public static ArrayList<Transaction> buffer = new ArrayList<Transaction>();
 	public static Timer timer = new Timer(); 
+	public static int i=0;
 	
 	public Initialiser() throws Exception
 	{
@@ -208,6 +209,7 @@ public class Initialiser {
 				try {
 					sender.sendCoin(amountOfCoins, receiver.id);
 					System.out.println("Amount to be send: "+ amountOfCoins);
+					System.out.println(i++);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -231,10 +233,10 @@ public class Initialiser {
 		Initialiser initialiser = new Initialiser();
 		
 		
-		
+		System.out.println("Finished First Part");
 		//users.get(0).sendCoin(10, "User 2");
 		//users.get(0).sendCoin(5, "User 3");
-		timer.scheduleAtFixedRate(task,10000, 10000);
+		timer.schedule(task,0, 5000);
 		
 		
 	}
